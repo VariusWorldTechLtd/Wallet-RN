@@ -79,7 +79,11 @@ export default class App extends React.Component {
         );
       }
       if (hasCameraPermission === false) {
-        return <Text>No access to camera</Text>;
+        return (
+          <View style={styles.container}>
+            <Text>No access to camera</Text>
+          </View>
+        );
       }
 
       return (
