@@ -26,6 +26,8 @@
     "node-libs-browser": "2.1.0",
     "react": "16.3.1",
     "react-native": "0.55.4",
+    "react-native-camera": "^1.10.0",
+    "react-native-qrcode-scanner": "^1.1.2",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.0.0-beta.34"
   }

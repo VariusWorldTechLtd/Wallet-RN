@@ -1,10 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { BarCodeScanner, Permissions } from 'expo';
 const vssoToken = require('./VssoToken.json');
 const vssoTokenAddress = '0x92fCc43e8FEda3CF74BF2A1A70fC456008Bd5b3C';
 const voxnetRpc = 'https://voxwallet.vwtbet.com:8545'
-
-const loginSessionAddressFromQR = '0x5A306838DdD010bA9A3B1C111A9dbee47a3cC658'
 
 import './global';
 
@@ -24,7 +23,15 @@ export default class App extends React.Component {
     super();
     this.state = {
       latestBlock: {},
+      hasCameraPermission: null
     }
+  }
+
+  
+
+  async componentDidMount() {
+    const { status } = await Permissions.askAsync(Permissions.CAMERA);
+    this.setState({ hasCameraPermission: status === 'granted' });
   }
 
   async componentWillMount() {
@@ -33,23 +40,73 @@ export default class App extends React.Component {
     //     console.log(latestBlock);
     //     this.setState({ latestBlock });
     //   });
-    
-      const addressToTopUp = walletAccount0Address;
-      var baseUrl = 'https://voxwallet.vwtbet.com:8080';
-      let url = baseUrl + '/?address=' + addressToTopUp
 
-      const getData = async url => {
-        try {
-          const response = await axios.get(url)
-          const data = response.data;
-          console.log(data);
-        } catch (error) {
-          console.log(error);
-        }
-      };
+      
+  }
 
-      // top up the account associated with mobile app
-      await getData(url);
+  render() {
+    const latestBlockNumber = this.state.latestBlock.number;
+
+    // return (
+    //   <View style={styles.container}>
+    //     <Text>Latest VOXNET block is: {latestBlockNumber}</Text>
+    //     <Text>Check your console!</Text>
+    //     <Text>You should find extra info on the latest VOXNET block.</Text>
+    //   </View>
+    // );
+    const { hasCameraPermission } = this.state;
+
+    if (hasCameraPermission === null) {
+      return <Text>Requesting for camera permission</Text>;
+    }
+    if (hasCameraPermission === false) {
+      return <Text>No access to camera</Text>;
+    }
+    return (
+      <View style={{ flex: 1 }}>
+        <BarCodeScanner
+          onBarCodeScanned={this.handleBarCodeScanned}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  }
+  async getVssoTokenBalance(address) {
+    const web3 = new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
+    let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
+    return await contract.methods.balanceOf(address)
+        .call()
+  }
+
+  async handleBarCodeScanned ({ type, data }) {
+    loginSessionAddressFromQR = data;
+    console.log('loginSessionAddressFromQR',loginSessionAddressFromQR)
+
+    //let currentBalance = await this.getVssoTokenBalance(walletAccount0Address);
+    let currentBalance = 0;
+
+      console.log('vsso token balance', currentBalance)
+      console.log(typeof(currentBalance))
+
+      if (parseInt(currentBalance) === 0)
+      {
+        const addressToTopUp = walletAccount0Address;
+        var baseUrl = 'https://voxwallet.vwtbet.com:8080';
+        let url = baseUrl + '/?address=' + addressToTopUp
+
+        const getData = async url => {
+          try {
+            const response = await axios.get(url)
+            const data = response.data;
+            console.log(data);
+          } catch (error) {
+            console.log(error);
+          }
+        };
+
+        // top up the account associated with mobile app
+        await getData(url);
+      }
 
       const web3 = new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
 
@@ -63,22 +120,10 @@ export default class App extends React.Component {
               transactionHash = receipt.transactionHash;
           })
           .on('error', error => {
-              res.send(error)
+              consle.log('error', error)
           })
-          //.then(console.log)
+          .then(console.log('sent 0.001 login tokens to:' + loginSessionAddressFromQR))
           .catch(console.error);
-  }
-
-  render() {
-    const latestBlockNumber = this.state.latestBlock.number;
-
-    return (
-      <View style={styles.container}>
-        <Text>Latest VOXNET block is: {latestBlockNumber}</Text>
-        <Text>Check your console!</Text>
-        <Text>You should find extra info on the latest VOXNET block.</Text>
-      </View>
-    );
   }
 }
 

@@ -1920,13 +1920,13 @@ big-integer@^1.6.7:
   version "1.6.31"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.31.tgz#6d7852486e67c642502dcc03f7225a245c9fc7fa"
 
+"bignumber.js@git+https://github.com/debris/bignumber.js#master":
+  version "2.0.7"
+  resolved "git+https://github.com/debris/bignumber.js#c7a38de919ed75e6fb6ba38051986e294b328df9"
+
 "bignumber.js@git+https://github.com/debris/bignumber.js.git#94d7146671b9719e00a09c29b01a691bc85048c2":
   version "2.0.7"
   resolved "git+https://github.com/debris/bignumber.js.git#94d7146671b9719e00a09c29b01a691bc85048c2"
-
-"bignumber.js@git+https://github.com/debris/bignumber.js.git#master":
-  version "2.0.7"
-  resolved "git+https://github.com/debris/bignumber.js.git#c7a38de919ed75e6fb6ba38051986e294b328df9"
 
 binary-extensions@^1.0.0:
   version "1.11.0"
@@ -7276,6 +7276,13 @@ react-native-branch@2.2.5:
   resolved "https://registry.yarnpkg.com/react-native-branch/-/react-native-branch-2.2.5.tgz#4074dd63b4973e6397d9ce50e97b57c77a518e9d"
   integrity sha1-QHTdY7SXPmOX2c5Q6XtXx3pRjp0=
 
+react-native-camera@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/react-native-camera/-/react-native-camera-1.10.0.tgz#cd477cf37ccc023c5e7ec013d0661d1a39ac6aca"
+  integrity sha512-8j5PvEKlniVwr5mZ+HQjLY8GKZuZoPTeXbwGxFwKdQczXV+x40VoIZJx14eXc+ge9HVFmlgVazmK4vSf+OTkIw==
+  dependencies:
+    prop-types "^15.6.2"
+
 react-native-gesture-handler@1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-1.0.6.tgz#8a672ca0c7a1b706dffee4e230e5cf0197d2cdb8"
@@ -7291,6 +7298,19 @@ react-native-maps@0.21.0:
   dependencies:
     babel-plugin-module-resolver "^2.3.0"
     babel-preset-react-native "1.9.0"
+
+react-native-permissions@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-1.1.1.tgz#4876004681ff8556454613d85249b01baff9b35b"
+  integrity sha512-t0Ujm177bagjUOSzhpmkSz+LqFW04HnY9TeZFavDCmV521fQvFz82aD+POXqWsAdsJVOK3umJYBNNqCjC3g0hQ==
+
+react-native-qrcode-scanner@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/react-native-qrcode-scanner/-/react-native-qrcode-scanner-1.1.2.tgz#5b6dfb4efd267a810bedb1f09b7c9ccb6d321e20"
+  integrity sha512-ID/s6za6N1m+V5dgzGZYr+rf9txuTYEnqqkowR8hujm9ddPRJEkXXGkoR6Y18WnpDGS7eDEt2BNPLXFkLLYhvQ==
+  dependencies:
+    prop-types "^15.5.10"
+    react-native-permissions "^1.1.1"
 
 react-native-reanimated@1.0.0-alpha.6:
   version "1.0.0-alpha.6"
