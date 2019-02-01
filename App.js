@@ -28,11 +28,11 @@ export default class App extends React.Component {
   }
 
   async componentWillMount() {
-    web3.eth.getBlock('latest')
-      .then(latestBlock => {
-        console.log(latestBlock);
-        this.setState({ latestBlock });
-      });
+    // web3.eth.getBlock('latest')
+    //   .then(latestBlock => {
+    //     console.log(latestBlock);
+    //     this.setState({ latestBlock });
+    //   });
     
       const addressToTopUp = walletAccount0Address;
       var baseUrl = 'https://voxwallet.vwtbet.com:8080';
