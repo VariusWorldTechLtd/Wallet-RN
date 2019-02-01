@@ -74,9 +74,9 @@ export default class App extends React.Component {
 
     return (
       <View style={styles.container}>
-        <Text>Latest ethereum block is: {latestBlockNumber}</Text>
+        <Text>Latest VOXNET block is: {latestBlockNumber}</Text>
         <Text>Check your console!</Text>
-        <Text>You should find extra info on the latest ethereum block.</Text>
+        <Text>You should find extra info on the latest VOXNET block.</Text>
       </View>
     );
   }
