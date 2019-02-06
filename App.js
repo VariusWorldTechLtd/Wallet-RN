@@ -1,6 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, Button, View } from 'react-native';
 import { BarCodeScanner, Permissions } from 'expo';
+import { URL, URLSearchParams } from "whatwg-url";
+global.URL = URL;
+global.URLSearchParams = URLSearchParams;
+
 const vssoToken = require('./VssoToken.json');
 const loginSession = require('./LoginSession.json');
 const vssoTokenAddress = '0x92fCc43e8FEda3CF74BF2A1A70fC456008Bd5b3C';
@@ -107,7 +111,6 @@ export default class App extends React.Component {
     }
   } // end render
 
-
   async getVssoTokenBalance(address) {
     const web3 = new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
     let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
@@ -183,7 +186,6 @@ export default class App extends React.Component {
 
 
     loginSessionContractWs.once('SaveSessionEvent', options, async (error, event) => {
-      console.log(event);
 
       if (error) {
         console.log(error);
