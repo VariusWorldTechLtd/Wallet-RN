@@ -2,8 +2,11 @@ import React from 'react';
 import { StyleSheet, Text, Button, View } from 'react-native';
 import { BarCodeScanner, Permissions } from 'expo';
 const vssoToken = require('./VssoToken.json');
+const loginSession = require('./LoginSession.json');
 const vssoTokenAddress = '0x92fCc43e8FEda3CF74BF2A1A70fC456008Bd5b3C';
-const voxnetRpc = 'https://voxwallet.vwtbet.com:8545'
+const voxnetRpc = 'https://voxwallet2.vwtbet.com:8545'
+const voxnetWs = 'wss://voxwallet2.vwtbet.com:8546'
+const vssoFaucetUrl = 'https://voxwallet2.vwtbet.com:8080'
 
 import './global';
 
@@ -15,7 +18,7 @@ const walletMnemonic = 'stick obtain head panther quantum frost enroll amateur l
 const walletAccount0Address = '0x89Bc1BeE1cB73B563b8552aD80718744E3C334D3'
 
 const web3http = new Web3(
-  new Web3.providers.HttpProvider('https://voxwallet.vwtbet.com:8545/'),
+  new Web3.providers.HttpProvider(voxnetRpc),
 );
 
 export default class App extends React.Component {
@@ -26,7 +29,7 @@ export default class App extends React.Component {
       hasCameraPermission: null,
       scanningQR: false
     }
-    
+
     this.handleBarCodeScanned = this.handleBarCodeScanned.bind(this);
     this.openCamera = this.openCamera.bind(this);
   }
@@ -44,26 +47,26 @@ export default class App extends React.Component {
   }
 
   async componentWillMount() {
-    
+
   }
 
   render() {
     const latestBlockNumber = this.state.latestBlock.number;
-    
+
     if (!this.state.scanningQR) {
       return (
         <View style={styles.container}>
           {/* <Text>Latest VOXNET block is: {latestBlockNumber}</Text> */}
           <Button
             raised
-            icon={{name: 'qr'}}
+            icon={{ name: 'qr' }}
             onPress={this.openCamera}
             title="Login using QR"
-            
+
             accessibilityLabel="Login by scanning QR on web"
             type="outline"
             raised="true"
-            
+
           />
         </View>
       );
@@ -73,9 +76,9 @@ export default class App extends React.Component {
       const { hasCameraPermission } = this.state;
       if (hasCameraPermission === null) {
         return (
-            <View style={styles.container}>
-                <Text>Requesting for camera permission</Text>
-            </View>   
+          <View style={styles.container}>
+            <Text>Requesting for camera permission</Text>
+          </View>
         );
       }
       if (hasCameraPermission === false) {
@@ -91,14 +94,14 @@ export default class App extends React.Component {
           <BarCodeScanner
             onBarCodeScanned={this.handleBarCodeScanned}
             style={[StyleSheet.absoluteFill, styles.container]}>
-          <View style={styles.layerTop} />
-          <View style={styles.layerCenter}>
-            <View style={styles.layerLeft} />
-            <View style={styles.focused} />
-            <View style={styles.layerRight} />
-          </View>
-          <View style={styles.layerBottom} />
-        </BarCodeScanner>
+            <View style={styles.layerTop} />
+            <View style={styles.layerCenter}>
+              <View style={styles.layerLeft} />
+              <View style={styles.focused} />
+              <View style={styles.layerRight} />
+            </View>
+            <View style={styles.layerBottom} />
+          </BarCodeScanner>
         </View>
       );
     }
@@ -109,27 +112,26 @@ export default class App extends React.Component {
     const web3 = new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
     let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
     return await contract.methods.balanceOf(address)
-        .call()
+      .call()
   }
 
-  openCamera ({ type, data }) {
+  openCamera({ type, data }) {
     console.log("scanning QR")
-    this.setState({scanningQR:true})
-    }
+    this.setState({ scanningQR: true })
+  }
 
-  async handleBarCodeScanned ({ type, data }) {
-    this.setState({scanningQR:false});
+  async handleBarCodeScanned({ type, data }) {
+    this.setState({ scanningQR: false });
     loginSessionAddressFromQR = data;
-    console.log('loginSessionAddressFromQR',loginSessionAddressFromQR)
+    console.log('loginSessionAddressFromQR', loginSessionAddressFromQR)
 
     let currentBalance = await this.getVssoTokenBalance(walletAccount0Address);
     console.log('vsso token balance', currentBalance)
 
-    if (parseInt(currentBalance) === 0)
-    {
+    if (parseInt(currentBalance) === 0) {
       console.log('Requesting new tokens')
       const addressToTopUp = walletAccount0Address;
-      var baseUrl = 'https://voxwallet.vwtbet.com:8080';
+      var baseUrl = vssoFaucetUrl;
       let url = baseUrl + '/?address=' + addressToTopUp
 
       const getData = async url => {
@@ -156,15 +158,51 @@ export default class App extends React.Component {
     let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
 
     await contract.methods.transfer(loginSessionAddressFromQR, web3.utils.toWei('0.001'))
-        .send({from: accounts[0], gasPrice:0, gas: 1000000,})
+      .send({ from: accounts[0], gasPrice: 0, gas: 1000000, })
+      .on('receipt', receipt => {
+        transactionHash = receipt.transactionHash;
+      })
+      .on('error', error => {
+        console.log('error', error)
+      })
+      .then(console.log('sent 0.001 login tokens to:' + loginSessionAddressFromQR))
+      .catch(console.error);
+
+
+    const web3ws = new Web3(new Web3.providers.WebsocketProvider(voxnetWs));
+    let loginSessionContractWs = new web3ws.eth.Contract(loginSession.abi, loginSessionAddressFromQR, (error, result) => { if (error) console.log(error) });
+
+    const options = {
+      filter: {
+        // _from:  process.env.WALLET_FROM,
+        // _to: contractAddress,
+        // _value: process.env.AMOUNT
+      },
+      fromBlock: 'latest'
+    };
+
+
+    loginSessionContractWs.once('SaveSessionEvent', options, async (error, event) => {
+      console.log(event);
+
+      if (error) {
+        console.log(error);
+        successCallback(false);
+      }
+
+      let loginSessionContract = new web3.eth.Contract(loginSession.abi, loginSessionAddressFromQR);
+
+      await loginSessionContract.methods.SaveData('Andy', 'Dennis', '33', 'Male')
+        .send({ from: accounts[0], gasPrice: 0, gas: 990000 })
         .on('receipt', receipt => {
-            transactionHash = receipt.transactionHash;
+          transactionHash = receipt.transactionHash;
         })
         .on('error', error => {
-            consle.log('error', error)
+          console.log('error', error)
         })
-        .then(console.log('sent 0.001 login tokens to:' + loginSessionAddressFromQR))
+        .then(console.log('sent user data to: ' + loginSessionAddressFromQR))
         .catch(console.error);
+    });
   }
 } // end app component
 
@@ -176,7 +214,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     margin: 0,
- 
+
     flex: 1,
     flexDirection: 'column'
   },
