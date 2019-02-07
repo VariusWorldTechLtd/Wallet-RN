@@ -1,11 +1,13 @@
-# Web3.js and React Native app
+# Vox Wallet React Native app
+
 
 This is a boilerplate for people that want to use the [web3.js Ethereum api](https://github.com/ethereum/web3.js/) with [react native](https://facebook.github.io/react-native/).
 
 ## Run
 
-1. `cd crna-and-web3`
-2. `yarn install`
+
+1. `yarn install`
+2. `brew install watchman`
 3. `yarn run ios`
 
 ## How to run Web3.js Ethereum Api with React Native
