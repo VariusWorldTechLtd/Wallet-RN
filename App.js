@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, Button, View } from 'react-native';
+import { StyleSheet, Text, Button, View, AsyncStorage } from 'react-native';
 import { BarCodeScanner, Permissions } from 'expo';
 import { URL, URLSearchParams } from "whatwg-url";
 global.URL = URL;
@@ -21,6 +21,82 @@ const axios = require('axios')
 const walletMnemonic = 'stick obtain head panther quantum frost enroll amateur liquid speak country remember'
 const walletAccount0Address = '0x89Bc1BeE1cB73B563b8552aD80718744E3C334D3'
 
+
+import t from 'tcomb-form-native';
+import { Nil } from 'tcomb';
+
+const Form = t.form.Form;
+
+var Gender = t.enums({
+  M: 'Male',
+  F: 'Female'
+});
+
+const User = t.struct({
+  firstname: t.String,
+  lastname: t.String,
+  age: t.Number,
+  gender: Gender,
+  terms: t.Boolean
+});
+
+let userValue = {
+  firstname: '',
+  lastname: '',
+  age: 0,
+  gender: '',
+  terms: false
+};
+
+const formStyles = {
+  ...Form.stylesheet,
+  formGroup: {
+    normal: {
+      marginBottom: 10
+    },
+  },
+  controlLabel: {
+    normal: {
+      color: 'blue',
+      fontSize: 18,
+      marginBottom: 7,
+      fontWeight: '600'
+    },
+    // the style applied when a validation error occours
+    error: {
+      color: 'red',
+      fontSize: 18,
+      marginBottom: 7,
+      fontWeight: '600'
+    }
+  }
+}
+
+const options = {
+  fields: {
+    // email: {
+    //   error: 'Without an email address how are you going to reset your password when you forget it?'
+    // },
+    firstname: {
+      error: 'Enter real first name that matches your ID document.'
+    },
+    lastname: {
+      error: 'Enter real first name that matches your ID document.'
+    },
+    age: {
+      error: 'Enter real age that matches your ID document.'
+    },
+    gender: {
+      error: 'Enter real gender that matches your ID document.'
+    },
+    terms: {
+      label: 'Agree to Terms',
+      error: 'You must agree.'
+    },
+  },
+  stylesheet: formStyles,
+};
+
 const web3http = new Web3(
   new Web3.providers.HttpProvider(voxnetRpc),
 );
@@ -31,36 +107,97 @@ export default class App extends React.Component {
     this.state = {
       latestBlock: {},
       hasCameraPermission: null,
-      scanningQR: false
+      scanningQR: false,
+      hasUserData: false,
     }
 
     this.handleBarCodeScanned = this.handleBarCodeScanned.bind(this);
     this.openCamera = this.openCamera.bind(this);
   }
 
+  _retrieveUserData = async (key, callback) => {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      console.log(value)
+      if (value !== null) {
+        console.log('retrieved', key, value);
+        callback(JSON.parse(value))
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  _storeUserData = async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   async componentDidMount() {
+    //await AsyncStorage.clear();
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
     this.setState({ hasCameraPermission: status === 'granted' });
 
+    
     web3http
       .eth.getBlock('latest')
       .then(latestBlock => {
-        console.log('latestBlock', latestBlock);
+        //console.log('latestBlock', latestBlock);
         this.setState({ latestBlock });
       });
   }
 
   async componentWillMount() {
+    await this._retrieveUserData('userData', userdata => {
+      userValue.firstname = userdata.firstname;
+      userValue.lastname = userdata.lastname;
+      userValue.age = userdata.age;
+      userValue.gender = userdata.gender;
+      this.setState({hasUserData:true});
+      console.log('userValue', userValue)
+    });
 
+  }
+
+  handleSubmit = async () => {
+    const value = this._form.getValue();
+    console.log('value: ', value);
+    await this._storeUserData('userData', JSON.stringify(value));
+    this.setState({hasUserData:true});
+    userValue.firstname = value.firstname;
+    userValue.lastname = value.lastname;
+    userValue.age = value.age;
+    userValue.gender = value.gender;
   }
 
   render() {
     const latestBlockNumber = this.state.latestBlock.number;
-
+    console.log('asdfasdfasd', userValue.firstname)
+    if (!this.state.hasUserData) {
+      return (<View style={styles.container}>
+        <Form 
+          ref={c => this._form = c}
+          type={User} 
+          options={options}
+          value={userValue}
+        />
+        <Button
+          title="Sign Up!"
+          onPress={this.handleSubmit}
+        />
+      </View>)
+    }
     if (!this.state.scanningQR) {
       return (
         <View style={styles.container}>
-          {/* <Text>Latest VOXNET block is: {latestBlockNumber}</Text> */}
+          <Text>Latest VOXNET block is: {latestBlockNumber}</Text>
+          <Text>Firstname: {userValue.firstname}</Text>
+          <Text>Lastname: {userValue.lastname}</Text>
+          <Text>age: {userValue.age}</Text>
+          <Text>gender: {userValue.gender}</Text>
           <Button
             raised
             icon={{ name: 'qr' }}
@@ -70,7 +207,6 @@ export default class App extends React.Component {
             accessibilityLabel="Login by scanning QR on web"
             type="outline"
             raised="true"
-
           />
         </View>
       );
