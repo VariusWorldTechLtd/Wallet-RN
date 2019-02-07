@@ -5,8 +5,9 @@ This is a boilerplate for people that want to use the [web3.js Ethereum api](htt
 
 ## Run
 
-1. `cd crna-and-web3`
-2. `yarn install`
+
+1. `yarn install`
+2. `brew install watchman`
 3. `yarn run ios`
 
 ## How to run Web3.js Ethereum Api with React Native
