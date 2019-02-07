@@ -1,4 +1,5 @@
-# Web3.js and React Native app
+# Vox Wallet React Native app
+
 
 This is a boilerplate for people that want to use the [web3.js Ethereum api](https://github.com/ethereum/web3.js/) with [react native](https://facebook.github.io/react-native/).
 
