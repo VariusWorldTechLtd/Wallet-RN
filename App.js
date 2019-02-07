@@ -127,54 +127,51 @@ export default class App extends React.Component {
     this.setState({ scanningQR: false });
     loginSessionAddressFromQR = data;
     console.log('loginSessionAddressFromQR', loginSessionAddressFromQR)
+    const web3 = await new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
 
-    let currentBalance = await this.getVssoTokenBalance(walletAccount0Address);
-    console.log('vsso token balance', currentBalance)
+    let account = await this.createAccount(web3);
+    await this.getLoginTokens(account);
+    await this.sendLoginToken(web3, account);
+    this.onSaveSessionEvent(() => this.saveUserData(web3, account));
+  }
 
+  async createAccount(web3) {
+    let account = (await web3.eth.getAccounts())[0];
+    console.log('walletAddress', account);
+    return account;
+  }
+
+  async getLoginTokens(addressToTopUp) {
+    let currentBalance = await this.getVssoTokenBalance(addressToTopUp);
+    console.log('vsso token balance', currentBalance);
     if (parseInt(currentBalance) === 0) {
-      console.log('Requesting new tokens')
-      const addressToTopUp = walletAccount0Address;
+      console.log('Requesting new tokens');
       var baseUrl = vssoFaucetUrl;
-      let url = baseUrl + '/?address=' + addressToTopUp
-
-      const getData = async url => {
+      let url = baseUrl + '/?address=' + addressToTopUp;
+      const getData = async (url) => {
         try {
-          const response = await axios.get(url)
+          const response = await axios.get(url);
           const data = response.data;
           console.log(data);
-        } catch (error) {
+        }
+        catch (error) {
           console.log(error);
         }
       };
-
       // top up the account associated with mobile app
       await getData(url);
     }
     else {
-      console.log('NOT requesting new tokens')
+      console.log('NOT requesting new tokens');
     }
+  }
 
-    const web3 = new Web3(new HDWalletProvider(walletMnemonic, voxnetRpc));
-
-    let accounts = await web3.eth.getAccounts();
-    console.log('walletAddress', accounts[0])
-    let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
-
-    await contract.methods.transfer(loginSessionAddressFromQR, web3.utils.toWei('0.001'))
-      .send({ from: accounts[0], gasPrice: 0, gas: 1000000, })
-      .on('receipt', receipt => {
-        transactionHash = receipt.transactionHash;
-      })
-      .on('error', error => {
-        console.log('error', error)
-      })
-      .then(console.log('sent 0.001 login tokens to:' + loginSessionAddressFromQR))
-      .catch(console.error);
-
-
+  async onSaveSessionEvent(action) {
     const web3ws = new Web3(new Web3.providers.WebsocketProvider(voxnetWs));
-    let loginSessionContractWs = new web3ws.eth.Contract(loginSession.abi, loginSessionAddressFromQR, (error, result) => { if (error) console.log(error) });
-
+    let loginSessionContractWs = new web3ws.eth.Contract(loginSession.abi, loginSessionAddressFromQR, (error, result) => {
+    if (error)
+      console.log(error);
+    });
     const options = {
       filter: {
         // _from:  process.env.WALLET_FROM,
@@ -183,28 +180,42 @@ export default class App extends React.Component {
       },
       fromBlock: 'latest'
     };
-
-
     loginSessionContractWs.once('SaveSessionEvent', options, async (error, event) => {
-
       if (error) {
         console.log(error);
         successCallback(false);
       }
-
-      let loginSessionContract = new web3.eth.Contract(loginSession.abi, loginSessionAddressFromQR);
-
-      await loginSessionContract.methods.SaveData('Andy', 'Dennis', '33', 'Male')
-        .send({ from: accounts[0], gasPrice: 0, gas: 990000 })
-        .on('receipt', receipt => {
-          transactionHash = receipt.transactionHash;
-        })
-        .on('error', error => {
-          console.log('error', error)
-        })
-        .then(console.log('sent user data to: ' + loginSessionAddressFromQR))
-        .catch(console.error);
+      await action();
+      
     });
+  }
+
+  async saveUserData(web3, account) {
+    let loginSessionContract = new web3.eth.Contract(loginSession.abi, loginSessionAddressFromQR);
+    await loginSessionContract.methods.SaveData('Andy', 'Dennis', '33', 'Male')
+      .send({ from: account, gasPrice: 0, gas: 990000 })
+      .on('receipt', receipt => {
+        transactionHash = receipt.transactionHash;
+      })
+      .on('error', error => {
+        console.log('error', error);
+      })
+      .then(console.log('sent user data to: ' + loginSessionAddressFromQR))
+      .catch(console.error);
+  }
+
+  async sendLoginToken(web3, account) {
+    let contract = new web3.eth.Contract(vssoToken.abi, vssoTokenAddress);
+    await contract.methods.transfer(loginSessionAddressFromQR, web3.utils.toWei('0.001'))
+      .send({ from: account, gasPrice: 0, gas: 1000000, })
+      .on('receipt', receipt => {
+        transactionHash = receipt.transactionHash;
+      })
+      .on('error', error => {
+        console.log('error', error);
+      })
+      .then(console.log('sent 0.001 login tokens to:' + loginSessionAddressFromQR))
+      .catch(console.error);
   }
 } // end app component
 
