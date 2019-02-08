@@ -111,7 +111,7 @@ export default class App extends React.Component {
   _retrieveUserData = async (key, callback) => {
     try {
       const value = await AsyncStorage.getItem(key);
-      console.log(value)
+      console.log("getting from local", key, value)
       if (value !== null) {
         console.log('retrieved', key, value);
         callback(JSON.parse(value))
