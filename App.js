@@ -18,8 +18,6 @@ const Web3 = require('web3');
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const axios = require('axios')
 
-const walletMnemonic = 'stick obtain head panther quantum frost enroll amateur liquid speak country remember'
-
 import t from 'tcomb-form-native';
 
 const Form = t.form.Form;
@@ -108,20 +106,21 @@ export default class App extends React.Component {
     this.openCamera = this.openCamera.bind(this);
   }
 
-  _retrieveUserData = async (key, callback) => {
+  _retrieveLocalData = async (key, callback) => {
     try {
       const value = await AsyncStorage.getItem(key);
-      console.log("getting from local", key, value)
+      console.log("got from local", key, value)
       if (value !== null) {
         console.log('retrieved', key, value);
         callback(JSON.parse(value))
       }
+      return value;
     } catch (error) {
       console.error(error);
     }
   };
 
-  _storeUserData = async (key, value) => {
+  _storeLocalData = async (key, value) => {
     try {
       await AsyncStorage.setItem(key, value);
     } catch (error) {
@@ -144,17 +143,25 @@ export default class App extends React.Component {
   }
 
   async componentWillMount() {
-    await this._retrieveUserData('userData', userdata => {
+    await this._retrieveLocalData('userData', userdata => {
       this.setState(userdata);
       console.log('state', this.state)
     });
 
+    let accountPrivateKey = await this._retrieveLocalData('accountPrivateKey');
+      if(accountPrivateKey === null) {
+        console.log('creating account')
+        let account = await web3http.eth.accounts.create(web3http.utils.randomHex(32));
+        accountPrivateKey = account.accountPrivateKey;
+      }
+      this.setState({accountPrivateKey:accountPrivateKey});
+      console.log('state', this.state)
   }
 
   handleSubmit = async () => {
     const value = this._form.getValue();
     console.log('value: ', value);
-    await this._storeUserData('userData', JSON.stringify(value));
+    await this._storeLocalData('userData', JSON.stringify(value));
     this.setState(value);
   }
 
