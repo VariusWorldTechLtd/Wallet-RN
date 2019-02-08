@@ -19,11 +19,8 @@ const HDWalletProvider = require('truffle-hdwallet-provider');
 const axios = require('axios')
 
 const walletMnemonic = 'stick obtain head panther quantum frost enroll amateur liquid speak country remember'
-const walletAccount0Address = '0x89Bc1BeE1cB73B563b8552aD80718744E3C334D3'
-
 
 import t from 'tcomb-form-native';
-import { Nil } from 'tcomb';
 
 const Form = t.form.Form;
 
@@ -39,14 +36,6 @@ const User = t.struct({
   gender: Gender,
   terms: t.Boolean
 });
-
-let userValue = {
-  firstname: '',
-  lastname: '',
-  age: 0,
-  gender: '',
-  terms: false
-};
 
 const formStyles = {
   ...Form.stylesheet,
@@ -108,7 +97,11 @@ export default class App extends React.Component {
       latestBlock: {},
       hasCameraPermission: null,
       scanningQR: false,
-      hasUserData: false,
+      firstname: null,
+      lastname: null,
+      age: 0,
+      gender: null,
+      terms: false
     }
 
     this.handleBarCodeScanned = this.handleBarCodeScanned.bind(this);
@@ -152,12 +145,8 @@ export default class App extends React.Component {
 
   async componentWillMount() {
     await this._retrieveUserData('userData', userdata => {
-      userValue.firstname = userdata.firstname;
-      userValue.lastname = userdata.lastname;
-      userValue.age = userdata.age;
-      userValue.gender = userdata.gender;
-      this.setState({hasUserData:true});
-      console.log('userValue', userValue)
+      this.setState(userdata);
+      console.log('state', this.state)
     });
 
   }
@@ -166,23 +155,18 @@ export default class App extends React.Component {
     const value = this._form.getValue();
     console.log('value: ', value);
     await this._storeUserData('userData', JSON.stringify(value));
-    this.setState({hasUserData:true});
-    userValue.firstname = value.firstname;
-    userValue.lastname = value.lastname;
-    userValue.age = value.age;
-    userValue.gender = value.gender;
+    this.setState(value);
   }
 
   render() {
     const latestBlockNumber = this.state.latestBlock.number;
-    console.log('asdfasdfasd', userValue.firstname)
-    if (!this.state.hasUserData) {
+
+    if (!this.state.firstname) {
       return (<View style={styles.container}>
         <Form 
           ref={c => this._form = c}
           type={User} 
           options={options}
-          value={userValue}
         />
         <Button
           title="Sign Up!"
@@ -194,10 +178,10 @@ export default class App extends React.Component {
       return (
         <View style={styles.container}>
           <Text>Latest VOXNET block is: {latestBlockNumber}</Text>
-          <Text>Firstname: {userValue.firstname}</Text>
-          <Text>Lastname: {userValue.lastname}</Text>
-          <Text>age: {userValue.age}</Text>
-          <Text>gender: {userValue.gender}</Text>
+          <Text>Firstname: {this.state.firstname}</Text>
+          <Text>Lastname: {this.state.lastname}</Text>
+          <Text>age: {this.state.age}</Text>
+          <Text>gender: {this.state.gender}</Text>
           <Button
             raised
             icon={{ name: 'qr' }}
@@ -304,10 +288,8 @@ export default class App extends React.Component {
 
   async onSaveSessionEvent(action) {
     const web3ws = new Web3(new Web3.providers.WebsocketProvider(voxnetWs));
-    let loginSessionContractWs = new web3ws.eth.Contract(loginSession.abi, loginSessionAddressFromQR, (error, result) => {
-    if (error)
-      console.log(error);
-    });
+    let loginSessionContractWs = new web3ws.eth.Contract(loginSession.abi, loginSessionAddressFromQR);
+      
     const options = {
       filter: {
         // _from:  process.env.WALLET_FROM,
@@ -322,13 +304,14 @@ export default class App extends React.Component {
         successCallback(false);
       }
       await action();
-      
     });
   }
 
   async saveUserData(web3, account) {
+    console.log ('saving data for account', account)
     let loginSessionContract = new web3.eth.Contract(loginSession.abi, loginSessionAddressFromQR);
-    await loginSessionContract.methods.SaveData('Andy', 'Dennis', '33', 'Male')
+    console.log(this.state.firstname, this.state.lastname, this.state.age.toString(), this.state.gender)
+    await loginSessionContract.methods.SaveData(this.state.firstname, this.state.lastname, this.state.age.toString(), this.state.gender)
       .send({ from: account, gasPrice: 0, gas: 990000 })
       .on('receipt', receipt => {
         transactionHash = receipt.transactionHash;
